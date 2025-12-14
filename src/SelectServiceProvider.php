@@ -9,8 +9,8 @@ class SelectServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (class_exists(\Livewire\Livewire::class)) {
-            \Livewire\Livewire::component('ld-select', Livewire\Select::class);
+            \Livewire\Livewire::component('sb-select', Livewire\Select::class);
         }
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'ld-select');
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'sb-select');
     }
 }

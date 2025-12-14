@@ -31,7 +31,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 export default {
-  name: 'LdSelect',
+  name: 'SbSelect',
   props: {
     modelValue: { default: null },
     options: { type: Object, required: true },

@@ -49,6 +49,6 @@ class Select extends Component
 
     public function render()
     {
-        return view('ld-select::livewire.select');
+        return view('sb-select::livewire.select');
     }
 }
