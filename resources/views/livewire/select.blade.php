@@ -1,61 +1,58 @@
 <div
-    x-data="{
-        choices: null,
-        init() {
-            this.choices = new Choices(this.$refs.select, {
-                allowHTML: true,
-                searchEnabled: {{ $searchable ? 'true' : 'false' }},
-                removeItemButton: {{ $clearable ? 'true' : 'false' }},
-                placeholder: true,
-                placeholderValue: '{{ $placeholder }}',
-                searchPlaceholderValue: '{{ config('ld-select.searchPlaceholder', 'Search...') }}',
-                noResultsText: '{{ config('ld-select.noResultsText', 'No results found') }}',
-                noChoicesText: '{{ config('ld-select.noChoicesText', 'No choices available') }}',
-                maxItemCount: {{ $maxItems }},
-                shouldSort: false,
-            })
-
-            this.$refs.select.addEventListener('change', () => {
-                const newValue = {{ $multiple ? 'true' : 'false' }} ? this.choices.getValue(true) : this.$refs.select.value
-                $wire.set('value', newValue)
-            })
-        },
-        destroy() {
-            if (this.choices) {
-                this.choices.destroy()
-            }
-        }
-    }"
-    x-init="init()"
-    wire:ignore
-    class="ld-select"
+    class="relative"
+    x-data="{ open: false }"
+    @click.away="open = false"
+    @keydown.escape="open = false"
 >
-    <select
-        x-ref="select"
-        @if($multiple) multiple @endif
+    <button
+        type="button"
+        @click="open = !open"
         @if($disabled) disabled @endif
-        class="w-full"
+        class="relative w-full cursor-default rounded-lg bg-white py-2.5 pl-3 pr-10 text-left border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 {{ $disabled ? 'opacity-50 cursor-not-allowed' : '' }}"
     >
-        @if(!$multiple && $placeholder)
-            <option value="">{{ $placeholder }}</option>
-        @endif
-        @foreach($options as $option)
-            @php
-                $optionValue = is_array($option) ? ($option[$valueField] ?? $option['value'] ?? '') : $option;
-                $optionLabel = is_array($option) ? ($option[$labelField] ?? $option['label'] ?? $option['value'] ?? '') : $option;
-                $isSelected = $multiple
-                    ? (is_array($value) && in_array($optionValue, $value))
-                    : $value == $optionValue;
-            @endphp
-            <option
-                value="{{ $optionValue }}"
-                @if($isSelected) selected @endif
-            >{{ $optionLabel }}</option>
-        @endforeach
-    </select>
-</div>
+        <span class="block truncate">
+            @if($multiple && is_array($value) && count($value) > 0)
+                {{ count($value) }} selected
+            @elseif(!$multiple && $value !== null && isset($options[$value]))
+                {{ $options[$value] }}
+            @else
+                <span class="text-gray-400">{{ $placeholder }}</span>
+            @endif
+        </span>
+        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+        </span>
+    </button>
 
-@assets
-    <link rel="stylesheet" href="{{ config('ld-select.choices_css_url') }}">
-    <script src="{{ config('ld-select.choices_js_url') }}"></script>
-@endassets
+    <div x-show="open" x-transition class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
+        @if($searchable)
+            <div class="px-3 py-2">
+                <input type="text" wire:model.live="search" placeholder="Search..." class="w-full rounded border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        @endif
+
+        @foreach($this->getFilteredOptions() as $optionValue => $label)
+            <div
+                wire:click="selectOption('{{ $optionValue }}')"
+                class="relative cursor-pointer select-none py-2 pl-10 pr-4 hover:bg-blue-50 {{ ($multiple && is_array($value) && in_array($optionValue, $value)) || (!$multiple && $value === $optionValue) ? 'bg-blue-50 text-blue-900' : 'text-gray-900' }}"
+            >
+                <span class="block truncate">{{ $label }}</span>
+                @if(($multiple && is_array($value) && in_array($optionValue, $value)) || (!$multiple && $value === $optionValue))
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600">
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    </span>
+                @endif
+            </div>
+        @endforeach
+    </div>
+
+    @if($name)
+        @if($multiple && is_array($value))
+            @foreach($value as $v)
+                <input type="hidden" name="{{ $name }}[]" value="{{ $v }}">
+            @endforeach
+        @else
+            <input type="hidden" name="{{ $name }}" value="{{ $value }}">
+        @endif
+    @endif
+</div>
